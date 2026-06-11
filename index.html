@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wrap & Go — Fresh Salads & Light Bites</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cur"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="ld-logo">Wrap<em>&</em>Go<em>.</em></div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══════ PUBLIC SITE ═══════ -->
+<div id="publicSite">
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#" class="nav-logo">Wrap<em>&</em>Go<em>.</em></a>
+    <ul class="nav-links">
+      <li><a href="#menu">Menu</a></li>
+      <li class="dot"></li>
+      <li><a href="#about">Our Story</a></li>
+      <li class="dot"></li>
+      <li><a href="#order">Order Now</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-kanji">🥗</div>
+    <div id="leaves"></div>
+    <p class="h-eye" id="hero-eye-text">Fresh Salads & Light Bites — Quezon City</p>
+    <h1 class="h-title">Fresh, Bold,<br><em>Nourishing,</em><br>Always Green</h1>
+    <p class="h-sub" id="hero-sub-text">Handcrafted salad bowls, artisan wraps, and a curated selection of sushi and rice meals — made fresh, every single day.</p>
+    <div class="h-pills">
+      <span class="h-pill">🥗 Salad-First Menu</span>
+      <span class="h-pill">🌯 Artisan Wraps</span>
+      <span class="h-pill">🌾 Gluten-Free Options</span>
+      <span class="h-pill">🌱 Vegan-Friendly</span>
+    </div>
+    <div class="h-cta">
+      <button class="btn-p" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'})">View Full Menu</button>
+      <button class="btn-g" onclick="document.getElementById('order').scrollIntoView({behavior:'smooth'})">Order Now</button>
+    </div>
+    <div class="h-scroll"><span>Explore</span><div class="h-sline"></div></div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="mqw"><div class="mqt" id="mqTrack"></div></div>
+
+  <!-- MENU -->
+  <section class="menu-sec" id="menu">
+    <div class="sh rev">
+      <span class="sh-eye">Our Offerings</span>
+      <h2 class="sh-title">Full Menu <em>& Details</em></h2>
+      <div class="sh-div"></div>
+      <p class="sh-sub">Tap any dish to see full ingredients, nutrition info, and allergens. Add to your order directly!</p>
+    </div>
+    <div class="cat-tabs rev" id="catTabs">
+      <button class="ctab on" data-cat="all">All</button>
+    </div>
+    <div class="menu-grid" id="menuGrid"></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about-sec" id="about">
+    <div class="rev">
+      <span class="ab-eye">Our Philosophy</span>
+      <h2 class="ab-h">Where <em>Fresh</em><br>Meets Flavor,<br>Every Day</h2>
+      <p class="ab-p">At Wrap & Go, we believe the best meals start with the best ingredients. Our salads are the stars of the show — generously built, beautifully layered, and packed with nutrients your body craves.</p>
+      <p class="ab-p">We complement our salad lineup with handcrafted wraps, satisfying rice meals, and a small but inspired sushi selection — because variety keeps every visit exciting.</p>
+      <div class="ab-feats">
+        <div class="ab-feat"><div class="ab-feat-icon">🥗</div><div class="ab-feat-title">Salads First</div><div class="ab-feat-desc">Over 20 salad varieties, built fresh to order.</div></div>
+        <div class="ab-feat"><div class="ab-feat-icon">🌯</div><div class="ab-feat-title">Handmade Wraps</div><div class="ab-feat-desc">Stuffed generously, never pre-made, always fresh.</div></div>
+        <div class="ab-feat"><div class="ab-feat-icon">🍣</div><div class="ab-feat-title">Sushi & Rice</div><div class="ab-feat-desc">A curated selection crafted by our kitchen team.</div></div>
+        <div class="ab-feat"><div class="ab-feat-icon">♻️</div><div class="ab-feat-title">Zero Waste</div><div class="ab-feat-desc">Compostable packaging across all orders.</div></div>
+      </div>
+    </div>
+    <div class="rev"><div class="bowl-scene" id="bowlScene"></div></div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-sec">
+    <div class="stat-item rev"><div class="stat-n" data-t="20"><em>0</em>+</div><div class="stat-l">Salad Varieties</div></div>
+    <div class="stat-item rev"><div class="stat-n" data-t="10"><em>0</em>+</div><div class="stat-l">Wrap Flavors</div></div>
+    <div class="stat-item rev"><div class="stat-n" data-t="5"><em>0</em>★</div><div class="stat-l">Guest Rating</div></div>
+    <div class="stat-item rev"><div class="stat-n" data-t="4"><em>0</em></div><div class="stat-l">Years Open</div></div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-sec">
+    <div class="sh rev">
+      <span class="sh-eye">Simple Process</span>
+      <h2 class="sh-title">How It <em>Works</em></h2>
+      <div class="sh-div"></div>
+    </div>
+    <div class="how-grid">
+      <div class="how-step rev"><div class="how-num">01</div><div class="how-icon">📋</div><div class="how-title">Browse the Menu</div><div class="how-desc">Explore salads, wraps, sushi, and rice meals — tap for full ingredients and allergens.</div></div>
+      <div class="how-step rev"><div class="how-num">02</div><div class="how-icon">🛒</div><div class="how-title">Pick Your Items</div><div class="how-desc">Add your favourite dishes to your order and set quantities.</div></div>
+      <div class="how-step rev"><div class="how-num">03</div><div class="how-icon">👨‍🍳</div><div class="how-title">We Build Fresh</div><div class="how-desc">Every bowl and wrap made to order — never pre-made, never reheated.</div></div>
+      <div class="how-step rev"><div class="how-num">04</div><div class="how-icon">🚀</div><div class="how-title">Pick Up or Delivery</div><div class="how-desc">Grab it at our store or have it delivered fresh to your door.</div></div>
+    </div>
+  </section>
+
+  <!-- ORDER SECTION -->
+  <section id="order" class="order-sec">
+    <div class="sh rev">
+      <span class="sh-eye">Place Your Order</span>
+      <h2 class="sh-title">What Would You <em>Like?</em></h2>
+      <div class="sh-div"></div>
+      <p class="sh-sub">Select your items below, fill in your details, and we'll prepare it fresh for you.</p>
+    </div>
+
+    <div class="order-layout">
+      <!-- LEFT: Item Picker -->
+      <div class="order-picker rev">
+        <div class="op-head">
+          <span class="op-title">Choose Your Items</span>
+          <span class="op-hint">Click + to add, − to remove</span>
+        </div>
+        <div class="op-list" id="opList">
+          <div class="op-loading">Loading menu…</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Order Summary + Form -->
+      <div class="order-form-wrap rev">
+        <!-- Cart summary -->
+        <div class="cart-box" id="cartBox">
+          <div class="cart-head">
+            <span class="cart-title">🛒 Your Order</span>
+            <span class="cart-count" id="cartCount">0 items</span>
+          </div>
+          <div class="cart-empty" id="cartEmpty">No items yet — pick something from the left!</div>
+          <div class="cart-items" id="cartItems"></div>
+          <div class="cart-total" id="cartTotal" style="display:none">
+            <span>Total</span>
+            <span id="cartTotalAmt">₱0</span>
+          </div>
+        </div>
+
+        <!-- Customer details form -->
+        <form id="orderForm" class="order-form">
+          <div class="of-section-label">Your Details</div>
+          <div class="of-grid">
+            <input class="of-input" type="text" id="o-name" placeholder="Full Name" required>
+            <input class="of-input" type="tel" id="o-phone" placeholder="Phone Number" required>
+            <input class="of-input of-full" type="email" id="o-email" placeholder="Email Address" required>
+          </div>
+
+          <div class="of-section-label" style="margin-top:1.2rem;">Delivery or Pickup?</div>
+          <div class="of-type-btns">
+            <button type="button" class="of-type-btn on" id="typePickup" onclick="setOrderType('pickup')">🏪 Store Pickup</button>
+            <button type="button" class="of-type-btn" id="typeDelivery" onclick="setOrderType('delivery')">🚀 Delivery</button>
+          </div>
+
+          <div id="deliveryFields" style="display:none;margin-top:1rem;">
+            <input class="of-input of-full" type="text" id="o-address" placeholder="Delivery Address">
+          </div>
+
+          <div class="of-grid" style="margin-top:1rem;">
+            <div class="of-field">
+              <label class="of-label">Preferred Time</label>
+              <input class="of-input" type="time" id="o-time">
+            </div>
+            <div class="of-field">
+              <label class="of-label">Date</label>
+              <input class="of-input" type="date" id="o-date">
+            </div>
+          </div>
+
+          <textarea class="of-input of-full of-textarea" id="o-notes" placeholder="Special requests, dietary notes, allergies…" style="margin-top:1rem;"></textarea>
+
+          <button type="submit" class="btn-order-submit" id="orderSubmitBtn">
+            Place My Order
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer id="siteFooter">
+    <div>
+      <a href="#" class="f-logo">Wrap<em>&</em>Go<em>.</em></a>
+      <p class="f-tag" id="footer-tag-text">A fresh-first salad bar and light bites café in Quezon City — where every bowl is built with care.</p>
+    </div>
+    <div class="f-col"><h4>Menu</h4><ul><li><a href="#menu">Signature Salads</a></li><li><a href="#menu">Artisan Wraps</a></li><li><a href="#menu">Sushi Selection</a></li><li><a href="#menu">Rice Meals</a></li><li><a href="#menu">Drinks & Desserts</a></li></ul></div>
+    <div class="f-col"><h4>Hours</h4><ul>
+      <li><span id="f-hours-wd">Mon–Fri: 10am–9pm</span></li>
+      <li><span id="f-hours-sat">Sat: 9am–10pm</span></li>
+      <li><span id="f-hours-sun">Sun: 9am–8pm</span></li>
+    </ul></div>
+    <div class="f-col"><h4>Contact</h4><ul>
+      <li><span id="f-address">123 Katipunan Ave., QC</span></li>
+      <li><a id="f-email" href="#">hello@wrapandgo.ph</a></li>
+      <li><a id="f-phone" href="#">+63 917 000 0000</a></li>
+    </ul></div>
+    <div class="f-bottom"><span>© 2026 Wrap & Go. All rights reserved.</span><span>Made with 🥗 freshness</span></div>
+  </footer>
+
+  <!-- DISH DETAIL MODAL -->
+  <div class="mbg" id="mbg" onclick="if(event.target===this)closeModal()"></div>
+  <div class="modal" id="dishModal">
+    <div class="m-img" id="mImg"></div>
+    <div class="mbody" id="mBody"></div>
+  </div>
+
+</div><!-- /publicSite -->
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
