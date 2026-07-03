@@ -169,7 +169,36 @@
             <input type="text" id="o-hp" name="website" tabindex="-1" autocomplete="off">
           </div>
 
-          <div class="of-section-label" style="margin-top:1.2rem;">Delivery or Pickup?</div>
+          <div class="of-section-label" style="margin-top:1.2rem;">Payment Method</div>
+          <div class="of-payment-methods">
+            <label class="of-payment-option">
+              <input type="radio" name="paymentMethod" value="gcash" checked onchange="setPaymentMethod('gcash')">
+              <span class="pm-label">📱 GCash</span>
+            </label>
+            <label class="of-payment-option">
+              <input type="radio" name="paymentMethod" value="maya" onchange="setPaymentMethod('maya')">
+              <span class="pm-label">📱 Maya</span>
+            </label>
+            <label class="of-payment-option">
+              <input type="radio" name="paymentMethod" value="card" onchange="setPaymentMethod('card')">
+              <span class="pm-label">💳 Credit/Debit Card</span>
+            </label>
+            <label class="of-payment-option">
+              <input type="radio" name="paymentMethod" value="bank" onchange="setPaymentMethod('bank')">
+              <span class="pm-label">🏦 Bank Transfer</span>
+            </label>
+          </div>
+
+          <div class="of-section-label" style="margin-top:1.2rem;">Proof of Payment</div>
+          <p class="of-hint">Upload a screenshot or photo of your e-receipt. Accepted: JPG, PNG, WEBP (max 5MB)</p>
+          <div class="of-receipt-upload" id="receiptUploadArea">
+            <input type="file" accept="image/*" id="receiptFile" onchange="handleReceiptUpload(this)">
+            <div class="of-upload-icon">📸</div>
+            <div class="of-upload-text">Click to upload or drag & drop</div>
+            <div class="of-upload-hint">E-receipt screenshot</div>
+          </div>
+          <img class="of-receipt-preview" id="receiptPreview" src="" alt="receipt preview">
+          <input type="hidden" id="o-receipt-url">
           <div class="of-type-btns">
             <button type="button" class="of-type-btn on" id="typePickup" onclick="setOrderType('pickup')">🏪 Store Pickup</button>
             <button type="button" class="of-type-btn" id="typeDelivery" onclick="setOrderType('delivery')">🚀 Delivery</button>
