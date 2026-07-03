@@ -390,8 +390,18 @@
   .rs-ready { background:rgba(58,125,68,.2); color:#6dbf7e; }
   .rs-completed { background:rgba(197,222,202,.1); color:var(--muted); }
   .rs-cancelled { background:rgba(192,80,80,.1); color:#c07070; }
-  .btn-rs-advance { background:rgba(120,150,220,.12); color:#8fa9e8; border-color:rgba(120,150,220,.2); }
   .btn-rs-advance:hover { background:rgba(120,150,220,.25); }
+
+  /* Payment verification */
+  .payment-method { font-size:.7rem; font-weight:500; color:var(--text); }
+  .payment-status { font-size:.65rem; font-weight:500; }
+  .payment-status.payment-pending { color:var(--gold); }
+  .payment-status.payment-verified { color:#6dbf7e; }
+  .payment-status.payment-none { color:var(--muted); }
+  .btn-rs-pay-verify { background:rgba(58,125,68,.15); color:#6dbf7e; border-color:rgba(58,125,68,.3); }
+  .btn-rs-pay-verify:hover { background:rgba(58,125,68,.25); }
+  .btn-rs-pay-reject { background:rgba(192,80,80,.1); color:#c07070; border-color:rgba(192,80,80,.2); }
+  .btn-rs-pay-reject:hover { background:rgba(192,80,80,.22); }
   .rs-completed { background:rgba(78,158,90,.15); color:#8ecf9a; }
   .rs-pickup { background:rgba(197,222,202,.1); color:var(--green-pale); }
   .rs-delivery { background:rgba(201,169,110,.12); color:var(--gold); }
@@ -562,7 +572,7 @@
         </div>
         <div class="adm-table-wrap">
           <table class="adm-table">
-            <thead><tr><th>Customer</th><th>Type</th><th>Items</th><th>Contact / Address</th><th>Preferred Time</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Customer</th><th>Type</th><th>Items</th><th>Contact / Address</th><th>Payment</th><th>Preferred Time</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="resTableBody"></tbody>
           </table>
         </div>
