@@ -34,12 +34,31 @@ let editingId = null;
 let ingTags = [], algTags = [];
 let siteSettings = {};
 let allOrders = [];
+let dishSearchTerm = '';
+let orderSearchTerm = '';
+let realtimeChannel = null;
 
 const CATS = {
   all:'All', salad:'Signature Salads', wraps:'Artisan Wraps',
   sushi:'Sushi Selection', rice:'Rice Meals', drinks:'Drinks & Desserts'
 };
 const BADGE_LABELS = { new:'New', pop:'Popular', veg:'Vegetarian', spicy:'Spicy', gf:'Gluten-Free' };
+
+// Order lifecycle: pending -> confirmed -> preparing -> ready -> completed (cancel available anytime before completed)
+const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
+function nextStatus(current) {
+  const idx = STATUS_FLOW.indexOf(current || 'pending');
+  return idx >= 0 && idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
+}
+function statusLabel(status, orderType) {
+  if (status === 'ready') return orderType === 'delivery' ? 'Out for Delivery' : 'Ready for Pickup';
+  return (status || 'pending').replace(/-/g, ' ');
+}
+function nextStatusLabel(status, orderType) {
+  const n = nextStatus(status);
+  if (!n) return null;
+  return n === 'ready' ? (orderType === 'delivery' ? 'Out for Delivery' : 'Ready for Pickup') : n.charAt(0).toUpperCase() + n.slice(1);
+}
 
 /* ── TOAST ── */
 function toast(msg, type = 'success') {
@@ -67,6 +86,7 @@ function showLoginError(msg) { const el=document.getElementById('loginError'); e
 document.getElementById('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') window.doLogin(); });
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await sb.auth.signOut();
+  if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
   document.getElementById('adminApp').classList.remove('show');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('loginEmail').value=''; document.getElementById('loginPassword').value='';
@@ -87,6 +107,31 @@ async function checkSession() {
 async function initAdmin() {
   checkDB();
   await Promise.all([loadDishes(), loadSettings(), loadOrders()]);
+  startRealtimeOrders();
+}
+
+/* ── REALTIME NEW-ORDER ALERTS ──
+   Requires the `orders` table to have Realtime enabled in the Supabase
+   dashboard (Database → Replication), and relies on the "Auth all" RLS
+   policy so this only works while signed in as an admin. */
+function startRealtimeOrders() {
+  if (realtimeChannel) return;
+  realtimeChannel = sb.channel('orders-admin-feed')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+      toast(`New order from ${payload.new?.name || 'a customer'}!`);
+      pulseOrdersBadge();
+      loadOrders();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => {
+      loadOrders();
+    })
+    .subscribe();
+}
+function pulseOrdersBadge() {
+  const badge = document.getElementById('resCount');
+  if (!badge) return;
+  badge.classList.add('pulse');
+  setTimeout(() => badge.classList.remove('pulse'), 1500);
 }
 
 /* ── DB STATUS ── */
@@ -104,10 +149,23 @@ async function loadDishes() {
   document.getElementById('dishCount').textContent = allDishes.length;
 }
 
+window.filterDishes = function(term) {
+  dishSearchTerm = (term || '').trim().toLowerCase();
+  renderAdminDishes();
+};
+
 async function renderAdminDishes() {
   const grid = document.getElementById('admDishGrid');
+  const filtered = dishSearchTerm
+    ? allDishes.filter(d =>
+        d.name.toLowerCase().includes(dishSearchTerm) ||
+        (CATS[d.category] || d.category || '').toLowerCase().includes(dishSearchTerm))
+    : allDishes;
+
   if (!allDishes.length) { grid.innerHTML=`<div style="color:var(--muted);font-size:.85rem;padding:2rem;">No dishes yet. Click "Add Dish" to start.</div>`; return; }
-  grid.innerHTML = allDishes.map(d=>`
+  if (!filtered.length) { grid.innerHTML=`<div style="color:var(--muted);font-size:.85rem;padding:2rem;">No dishes match "${dishSearchTerm}".</div>`; return; }
+
+  grid.innerHTML = filtered.map(d=>`
     <div class="adm-card">
       <div class="adm-card-img">${d.photo_url?`<img src="${d.photo_url}" alt="${d.name}">`:`<div class="adm-card-img-ph">${d.emoji||'🥗'}</div>`}</div>
       <div class="adm-card-body">
@@ -119,8 +177,12 @@ async function renderAdminDishes() {
           <label>${d.available!==false?'Available':'Hidden'}</label>
         </div>
         <div class="adm-card-actions">
-          <button class="btn-adm-edit" onclick="editDish('${d.id}')">✏ Edit</button>
-          <button class="btn-adm-del" onclick="deleteDish('${d.id}','${d.name.replace(/'/g,"\\'")}')">🗑</button>
+          <button class="btn-adm-edit" onclick="editDish('${d.id}')">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:.3rem;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit
+          </button>
+          <button class="btn-adm-del" onclick="deleteDish('${d.id}','${d.name.replace(/'/g,"\\'")}')">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
         </div>
       </div>
     </div>`).join('');
@@ -212,26 +274,45 @@ async function loadOrders() {
   document.getElementById('resCount').textContent = allOrders.length;
 }
 
+window.filterOrders = function(term) {
+  orderSearchTerm = (term || '').trim().toLowerCase();
+  renderOrdersTable();
+};
+
 function renderOrdersTable() {
   const tbody = document.getElementById('resTableBody');
+  const filtered = orderSearchTerm
+    ? allOrders.filter(o =>
+        (o.name || '').toLowerCase().includes(orderSearchTerm) ||
+        (o.email || '').toLowerCase().includes(orderSearchTerm) ||
+        (o.phone || '').toLowerCase().includes(orderSearchTerm) ||
+        String(o.id).includes(orderSearchTerm))
+    : allOrders;
+
   if (!allOrders.length) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem;">No orders yet.</td></tr>`;
     return;
   }
-  tbody.innerHTML = allOrders.map(o => {
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem;">No orders match "${orderSearchTerm}".</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(o => {
     const items = Array.isArray(o.items) ? o.items : [];
     const itemSummary = items.map(i => `${i.name} ×${i.qty}`).join(', ') || '—';
     const when = [o.preferred_date, o.preferred_time].filter(Boolean).join(' ') || '—';
+    const status = o.status || 'pending';
+    const nLabel = nextStatusLabel(status, o.order_type);
     return `<tr>
-      <td>${o.name}<br><small style="color:var(--muted)">${o.email}</small></td>
+      <td>#${o.id} ${o.name}<br><small style="color:var(--muted)">${o.email}</small></td>
       <td><span class="res-status rs-${o.order_type==='delivery'?'delivery':'pickup'}">${o.order_type||'pickup'}</span></td>
       <td style="max-width:180px;font-size:.72rem;">${itemSummary}</td>
       <td style="font-size:.72rem;">${o.phone||'—'}<br>${o.address||''}</td>
       <td style="font-size:.72rem;">${when}</td>
-      <td><span class="res-status rs-${o.status||'pending'}">${o.status||'pending'}</span></td>
+      <td><span class="res-status rs-${status}">${statusLabel(status, o.order_type)}</span></td>
       <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
-        ${o.status!=='confirmed'?`<button class="btn-rs btn-rs-confirm" onclick="updateOrder(${o.id},'confirmed')">Confirm</button>`:''}
-        ${o.status!=='cancelled'?`<button class="btn-rs btn-rs-cancel" onclick="updateOrder(${o.id},'cancelled')">Cancel</button>`:''}
+        ${nLabel && status!=='cancelled' ? `<button class="btn-rs btn-rs-advance" onclick="updateOrder(${o.id},'${nextStatus(status)}')">${nLabel}</button>` : ''}
+        ${status!=='cancelled' && status!=='completed' ? `<button class="btn-rs btn-rs-cancel" onclick="updateOrder(${o.id},'cancelled')">Cancel</button>` : ''}
       </td>
     </tr>`;
   }).join('');
