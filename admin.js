@@ -290,11 +290,11 @@ function renderOrdersTable() {
     : allOrders;
 
   if (!allOrders.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem;">No orders yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem;">No orders yet.</td></tr>`;
     return;
   }
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem;">No orders match "${orderSearchTerm}".</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem;">No orders match "${orderSearchTerm}".</td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map(o => {
@@ -303,20 +303,62 @@ function renderOrdersTable() {
     const when = [o.preferred_date, o.preferred_time].filter(Boolean).join(' ') || '—';
     const status = o.status || 'pending';
     const nLabel = nextStatusLabel(status, o.order_type);
+    const paymentMethod = o.payment_method ? paymentMethodLabel(o.payment_method) : '—';
+    const paymentStatus = o.payment_verified ? '✓ Verified' : (o.payment_proof_url ? '⏳ Pending' : '—');
+    const paymentStatusClass = o.payment_verified ? 'payment-verified' : (o.payment_proof_url ? 'payment-pending' : 'payment-none');
+    
     return `<tr>
       <td>#${o.id} ${o.name}<br><small style="color:var(--muted)">${o.email}</small></td>
       <td><span class="res-status rs-${o.order_type==='delivery'?'delivery':'pickup'}">${o.order_type||'pickup'}</span></td>
       <td style="max-width:180px;font-size:.72rem;">${itemSummary}</td>
       <td style="font-size:.72rem;">${o.phone||'—'}<br>${o.address||''}</td>
+      <td style="font-size:.72rem;"><span class="payment-method">${paymentMethod}</span><br><span class="payment-status ${paymentStatusClass}">${paymentStatus}</span></td>
       <td style="font-size:.72rem;">${when}</td>
       <td><span class="res-status rs-${status}">${statusLabel(status, o.order_type)}</span></td>
-      <td style="display:flex;gap:.4rem;flex-wrap:wrap;">
+      <td style="display:flex;gap:.4rem;flex-wrap:wrap;font-size:.65rem;">
+        ${o.payment_proof_url && !o.payment_verified ? `<button class="btn-rs btn-rs-pay-verify" onclick="verifyPayment(${o.id}, true)">✓ Verify</button>` : ''}
+        ${o.payment_proof_url && !o.payment_verified ? `<button class="btn-rs btn-rs-pay-reject" onclick="verifyPayment(${o.id}, false)">✗ Reject</button>` : ''}
+        ${o.payment_proof_url ? `<button class="btn-rs" style="background:rgba(120,150,220,.12);color:#8fa9e8;border-color:rgba(120,150,220,.2);" onclick="viewReceipt(${o.id})">📸 View</button>` : ''}
         ${nLabel && status!=='cancelled' ? `<button class="btn-rs btn-rs-advance" onclick="updateOrder(${o.id},'${nextStatus(status)}')">${nLabel}</button>` : ''}
         ${status!=='cancelled' && status!=='completed' ? `<button class="btn-rs btn-rs-cancel" onclick="updateOrder(${o.id},'cancelled')">Cancel</button>` : ''}
       </td>
     </tr>`;
   }).join('');
 }
+
+function paymentMethodLabel(method) {
+  const labels = { gcash: '📱 GCash', maya: '📱 Maya', card: '💳 Card', bank: '🏦 Bank' };
+  return labels[method] || method;
+}
+
+function paymentMethodLabel(method) {
+  const labels = { gcash: '📱 GCash', maya: '📱 Maya', card: '💳 Card', bank: '🏦 Bank' };
+  return labels[method] || method;
+}
+
+/* Payment verification */
+async function verifyPayment(orderId, isVerified) {
+  const order = allOrders.find(o => o.id === orderId);
+  if (!order) return;
+
+  const { error } = await sb.from('orders').update({ payment_verified: isVerified }).eq('id', orderId);
+  if (!error) {
+    toast(isVerified ? '✓ Payment verified!' : '✗ Payment rejected.', isVerified ? 'success' : 'error');
+    loadOrders();
+  } else {
+    toast(`Error: ${error.message}`, 'error');
+  }
+}
+
+window.verifyPayment = verifyPayment;
+window.viewReceipt = function(orderId) {
+  const order = allOrders.find(o => o.id === orderId);
+  if (!order || !order.payment_proof_url) {
+    toast('No receipt found for this order.', 'error');
+    return;
+  }
+  window.open(order.payment_proof_url, '_blank');
+};
 
 window.updateOrder = async (id, status) => {
   const {error}=await sb.from('orders').update({status}).eq('id',id);
