@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Midori Admin</title>
+<title>Wrap & Go — Admin</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231d3b21'/%3E%3Ctext x='50' y='66' font-size='54' text-anchor='middle'%3E%F0%9F%A5%97%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@200;300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -257,11 +258,28 @@
   }
   .adm-sb-item:hover { background: rgba(197,222,202,.04); color: var(--green-pale); }
   .adm-sb-item.on { background: rgba(58,125,68,.1); color: var(--green-pale); border-left-color: var(--green); }
-  .adm-sb-icon { font-size: 1rem; }
+  .adm-sb-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; }
   .adm-sb-badge {
     margin-left: auto; background: var(--green); color: #fff;
     font-size: .55rem; padding: .15rem .45rem; border-radius: 10px;
+    transition: transform .3s;
   }
+  .adm-sb-badge.pulse { animation: badgePulse 1.5s ease; }
+  @keyframes badgePulse {
+    0%, 100% { transform: scale(1); background: var(--green); }
+    30% { transform: scale(1.4); background: var(--gold); }
+  }
+
+  /* Search bars */
+  .adm-search-wrap { margin-bottom: 1.2rem; max-width: 320px; }
+  .adm-search {
+    width: 100%; padding: .6rem .9rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .78rem; font-weight: 300;
+    outline: none; transition: border-color .2s;
+  }
+  .adm-search:focus { border-color: rgba(58,125,68,.4); }
+  .adm-search::placeholder { color: var(--muted); }
 
   .adm-content { flex: 1; overflow-y: auto; padding: 2rem; }
 
@@ -368,7 +386,12 @@
   }
   .rs-pending { background:rgba(201,169,110,.15); color:var(--gold); }
   .rs-confirmed { background:rgba(58,125,68,.15); color:#6dbf7e; }
+  .rs-preparing { background:rgba(120,150,220,.15); color:#8fa9e8; }
+  .rs-ready { background:rgba(58,125,68,.2); color:#6dbf7e; }
+  .rs-completed { background:rgba(197,222,202,.1); color:var(--muted); }
   .rs-cancelled { background:rgba(192,80,80,.1); color:#c07070; }
+  .btn-rs-advance { background:rgba(120,150,220,.12); color:#8fa9e8; border-color:rgba(120,150,220,.2); }
+  .btn-rs-advance:hover { background:rgba(120,150,220,.25); }
   .rs-completed { background:rgba(78,158,90,.15); color:#8ecf9a; }
   .rs-pickup { background:rgba(197,222,202,.1); color:var(--green-pale); }
   .rs-delivery { background:rgba(201,169,110,.12); color:var(--gold); }
@@ -450,14 +473,14 @@
 <div id="loginScreen">
   <div class="login-bg"></div>
   <div class="login-grid-lines"></div>
-  <div class="login-kanji">緑</div>
+  <div class="login-kanji">🥗</div>
   <div class="login-box">
-    <div class="login-logo">Midori<em>.</em></div>
+    <div class="login-logo">Wrap<em>&</em>Go<em>.</em></div>
     <div class="login-sub">Admin Portal</div>
     <div class="login-divider"></div>
     <div class="login-error" id="loginError"></div>
     <label class="login-label" for="loginEmail">Email Address</label>
-    <input class="login-input" type="email" id="loginEmail" placeholder="admin@midori.ph" autocomplete="email">
+    <input class="login-input" type="email" id="loginEmail" placeholder="admin@wrapandgo.ph" autocomplete="email">
     <label class="login-label" for="loginPassword">Password</label>
     <input class="login-input" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
     <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
@@ -471,7 +494,7 @@
   <!-- NAV -->
   <div class="adm-nav">
     <div>
-      <span class="adm-logo">Midori<em>.</em> <small>Admin</small></span>
+      <span class="adm-logo">Wrap<em>&</em>Go<em>.</em> <small>Admin</small></span>
     </div>
     <div class="adm-nav-right">
       <span class="adm-status" id="dbStatus">● Connecting…</span>
@@ -484,11 +507,11 @@
     <!-- Sidebar -->
     <div class="adm-sidebar">
       <div class="adm-sb-label">Main</div>
-      <div class="adm-sb-item on" data-sec="dashboard"><span class="adm-sb-icon">📊</span>Dashboard</div>
-      <div class="adm-sb-item" data-sec="dishes"><span class="adm-sb-icon">🍜</span>Dishes <span class="adm-sb-badge" id="dishCount">0</span></div>
-      <div class="adm-sb-item" data-sec="reservations"><span class="adm-sb-icon">🛒</span>Orders <span class="adm-sb-badge" id="resCount">0</span></div>
+      <div class="adm-sb-item on" data-sec="dashboard"><span class="adm-sb-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</div>
+      <div class="adm-sb-item" data-sec="dishes"><span class="adm-sb-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v3M8 4.5l1.2 2.7M16 4.5l-1.2 2.7"/></svg></span>Dishes <span class="adm-sb-badge" id="dishCount">0</span></div>
+      <div class="adm-sb-item" data-sec="reservations"><span class="adm-sb-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="20" r="1.3" fill="currentColor" stroke="none"/><path d="M2.5 3h2.4l2.1 11.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L20.5 7H6"/></svg></span>Orders <span class="adm-sb-badge" id="resCount">0</span></div>
       <div class="adm-sb-label" style="margin-top:1rem;">Config</div>
-      <div class="adm-sb-item" data-sec="settings"><span class="adm-sb-icon">⚙️</span>Settings</div>
+      <div class="adm-sb-item" data-sec="settings"><span class="adm-sb-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>Settings</div>
     </div>
 
     <!-- Content -->
@@ -522,6 +545,9 @@
           <div><h2>Menu Dishes</h2><p>Add, edit or remove dishes. Changes appear live on the customer menu.</p></div>
           <button class="btn-adm-add" onclick="openDishForm()">+ Add Dish</button>
         </div>
+        <div class="adm-search-wrap">
+          <input class="adm-search" type="text" placeholder="Search dishes by name or category…" oninput="filterDishes(this.value)">
+        </div>
         <div class="adm-grid" id="admDishGrid"></div>
       </div>
 
@@ -530,6 +556,9 @@
         <div class="adm-ph">
           <div><h2>Orders</h2><p>Manage all incoming pickup and delivery orders.</p></div>
           <button class="btn-adm-add" style="background:rgba(192,80,80,.15);border:1px solid rgba(192,80,80,.25);color:#C05050;" onclick="clearCancelledRes()">🗑 Clear Cancelled</button>
+        </div>
+        <div class="adm-search-wrap">
+          <input class="adm-search" type="text" placeholder="Search by order #, name, email, or phone…" oninput="filterOrders(this.value)">
         </div>
         <div class="adm-table-wrap">
           <table class="adm-table">
@@ -547,17 +576,17 @@
         <div class="adm-settings-grid">
           <div class="adm-setting-group">
             <h3>Restaurant Info</h3>
-            <div class="adm-field"><label>Restaurant Name</label><input class="adm-input" id="s-name" placeholder="Midori"></div>
+            <div class="adm-field"><label>Restaurant Name</label><input class="adm-input" id="s-name" placeholder="Wrap & Go"></div>
             <div class="adm-field"><label>Tagline</label><input class="adm-input" id="s-tagline" placeholder="Japanese Kitchen & Salad Bar"></div>
             <div class="adm-field"><label>Address</label><input class="adm-input" id="s-address" placeholder="123 Sakura St., QC"></div>
             <button class="btn-adm-save" onclick="saveSettings(['name','tagline','address'])">Save Info</button>
           </div>
           <div class="adm-setting-group">
             <h3>Contact & Social</h3>
-            <div class="adm-field"><label>Email</label><input class="adm-input" id="s-email" placeholder="hello@midori.ph"></div>
+            <div class="adm-field"><label>Email</label><input class="adm-input" id="s-email" placeholder="hello@wrapandgo.ph"></div>
             <div class="adm-field"><label>Phone</label><input class="adm-input" id="s-phone" placeholder="+63 917 000 0000"></div>
-            <div class="adm-field"><label>Instagram URL</label><input class="adm-input" id="s-instagram" placeholder="https://instagram.com/midoriph"></div>
-            <div class="adm-field"><label>Facebook URL</label><input class="adm-input" id="s-facebook" placeholder="https://facebook.com/midoriph"></div>
+            <div class="adm-field"><label>Instagram URL</label><input class="adm-input" id="s-instagram" placeholder="https://instagram.com/wrapandgo"></div>
+            <div class="adm-field"><label>Facebook URL</label><input class="adm-input" id="s-facebook" placeholder="https://facebook.com/wrapandgo"></div>
             <button class="btn-adm-save" onclick="saveSettings(['email','phone','instagram','facebook'])">Save Contact</button>
           </div>
           <div class="adm-setting-group">
