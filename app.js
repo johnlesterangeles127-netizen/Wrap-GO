@@ -9,7 +9,18 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
    ════════════════════════════════ */
 let allDishes = [];
 let siteSettings = {};
-let cart = {}; // { dishId: quantity }
+const CART_KEY = 'wrapgo_cart_v1';
+let cart = loadCartFromStorage(); // { dishId: quantity }
+
+function loadCartFromStorage() {
+  try {
+    const raw = localStorage.getItem(CART_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function saveCartToStorage() {
+  try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch {}
+}
 
 const CATS = {
   all:'All',
@@ -46,10 +57,18 @@ async function loadDishes() {
   const { data, error } = await sb.from('dishes').select('*').order('sort_order').order('created_at');
   if (error) { console.error('Supabase error:', error.message); allDishes = []; }
   else allDishes = data || [];
+  // Drop any cart items pointing at dishes that no longer exist or are unavailable
+  let cartChanged = false;
+  Object.keys(cart).forEach(id => {
+    const d = allDishes.find(x => String(x.id) === String(id));
+    if (!d || d.available === false) { delete cart[id]; cartChanged = true; }
+  });
+  if (cartChanged) saveCartToStorage();
   renderPublicMenu('all');
   buildCatTabs();
   buildMarquee();
   renderOrderPicker();
+  renderCart();
 }
 
 function renderPublicMenu(filter) {
@@ -216,6 +235,7 @@ window.adjustCart = function(id, delta) {
   if (!d) return;
   cart[id] = Math.max(0, (cart[id] || 0) + delta);
   if (cart[id] === 0) delete cart[id];
+  saveCartToStorage();
   renderCart();
   renderOrderPicker();
   // Refresh modal cart controls if open
@@ -320,6 +340,7 @@ window.setOrderType = function(type) {
   document.getElementById('typePickup').classList.toggle('on', type === 'pickup');
   document.getElementById('typeDelivery').classList.toggle('on', type === 'delivery');
   document.getElementById('deliveryFields').style.display = type === 'delivery' ? 'block' : 'none';
+  document.getElementById('o-address').required = type === 'delivery';
 };
 
 /* ════════════════════════════════
@@ -327,11 +348,35 @@ window.setOrderType = function(type) {
    ════════════════════════════════ */
 async function submitOrder(e) {
   e.preventDefault();
+
+  // Honeypot: real users never fill/see this field. If it's filled, quietly
+  // pretend success without touching the database.
+  const hp = document.getElementById('o-hp');
+  if (hp && hp.value.trim() !== '') {
+    const btn = document.getElementById('orderSubmitBtn');
+    btn.textContent = '✓ Order Placed!';
+    setTimeout(() => { btn.textContent = 'Place My Order'; }, 4000);
+    e.target.reset();
+    return;
+  }
+
   if (!Object.keys(cart).length) {
     toast('Please add at least one item to your order!', 'error');
     return;
   }
+
   const isDelivery = document.getElementById('typeDelivery').classList.contains('on');
+  const addressVal = document.getElementById('o-address').value.trim();
+  if (isDelivery && !addressVal) {
+    toast('Please enter a delivery address.', 'error');
+    document.getElementById('o-address').focus();
+    return;
+  }
+  if (!document.getElementById('o-date').value || !document.getElementById('o-time').value) {
+    toast('Please choose a preferred date and time.', 'error');
+    return;
+  }
+
   const orderItems = Object.entries(cart).map(([id, qty]) => {
     const d = allDishes.find(x => String(x.id) === String(id));
     return { id, name: d?.name || id, qty, price: d?.price || '' };
@@ -341,7 +386,7 @@ async function submitOrder(e) {
     email: document.getElementById('o-email').value,
     phone: document.getElementById('o-phone').value,
     order_type: isDelivery ? 'delivery' : 'pickup',
-    address: isDelivery ? document.getElementById('o-address').value : null,
+    address: isDelivery ? addressVal : null,
     preferred_date: document.getElementById('o-date').value || null,
     preferred_time: document.getElementById('o-time').value || null,
     notes: document.getElementById('o-notes').value,
@@ -351,18 +396,29 @@ async function submitOrder(e) {
   const btn = document.getElementById('orderSubmitBtn');
   btn.disabled = true;
   btn.textContent = 'Placing order…';
-  const { error } = await sb.from('orders').insert(payload);
+  const { data, error } = await sb.from('orders').insert(payload).select('id').single();
   if (!error) {
     btn.textContent = '✓ Order Placed!';
     btn.style.background = 'var(--green-mid)';
     toast('Order received! We\'ll confirm shortly.');
+    const refEl = document.getElementById('orderRef');
+    if (data?.id) {
+      refEl.textContent = `Your Order ID is #${data.id} — save it to track your order below, using ${payload.email}.`;
+      refEl.style.display = 'block';
+      // Pre-fill the tracking form for convenience
+      const tId = document.getElementById('t-id'), tEmail = document.getElementById('t-email');
+      if (tId) tId.value = data.id;
+      if (tEmail) tEmail.value = payload.email;
+    }
     cart = {};
+    saveCartToStorage();
     renderCart();
     renderOrderPicker();
     e.target.reset();
     document.getElementById('deliveryFields').style.display = 'none';
     document.getElementById('typePickup').classList.add('on');
     document.getElementById('typeDelivery').classList.remove('on');
+    document.getElementById('o-address').required = false;
     setTimeout(() => { btn.textContent = 'Place My Order'; btn.style.background = ''; btn.disabled = false; }, 4000);
   } else {
     console.error('Order insert error:', error.code, error.message, error.details, error.hint);
@@ -375,6 +431,45 @@ async function submitOrder(e) {
   }
 }
 document.getElementById('orderForm').addEventListener('submit', submitOrder);
+
+/* ════════════════════════════════
+   TRACK ORDER
+   ════════════════════════════════ */
+async function trackOrder(e) {
+  e.preventDefault();
+  const id = document.getElementById('t-id').value.trim();
+  const email = document.getElementById('t-email').value.trim();
+  const resultEl = document.getElementById('trackResult');
+  const btn = document.getElementById('trackBtn');
+  if (!id || !email) return;
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  resultEl.innerHTML = '';
+
+  // Uses a security-definer RPC (get_order_status) so the anon key can look up
+  // a single order by id+email without being able to read the whole orders table.
+  const { data, error } = await sb.rpc('get_order_status', { p_id: id, p_email: email });
+  btn.disabled = false;
+  btn.textContent = 'Check Status';
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row) {
+    resultEl.innerHTML = `<div class="track-notfound">We couldn't find an order with that ID and email. Double-check both and try again.</div>`;
+    return;
+  }
+  const items = Array.isArray(row.items) ? row.items : [];
+  const itemsHTML = items.map(i => `<span class="dchip">${i.name} ×${i.qty}</span>`).join('');
+  resultEl.innerHTML = `
+    <div class="track-card">
+      <div class="track-card-top">
+        <span>Order #${row.id}</span>
+        <span class="res-status rs-${row.status}">${(row.status || 'pending').replace('-', ' ')}</span>
+      </div>
+      <div class="track-card-items">${itemsHTML || '—'}</div>
+      <div class="track-card-meta">${row.order_type === 'delivery' ? '🚀 Delivery' : '🏪 Pickup'} · ${[row.preferred_date, row.preferred_time].filter(Boolean).join(' ') || 'No time set'}</div>
+    </div>`;
+}
+document.getElementById('trackForm').addEventListener('submit', trackOrder);
 
 /* ════════════════════════════════
    SETTINGS
