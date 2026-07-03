@@ -7,10 +7,68 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 /* ════════════════════════════════
    STATE
    ════════════════════════════════ */
-let allDishes = [];
-let siteSettings = {};
-const CART_KEY = 'wrapgo_cart_v1';
-let cart = loadCartFromStorage(); // { dishId: quantity }
+let currentPaymentMethod = 'gcash';
+let currentReceiptUrl = null;
+
+window.setPaymentMethod = function(method) {
+  currentPaymentMethod = method;
+};
+
+window.handleReceiptUpload = async function(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    toast('Please upload an image file (JPG, PNG, WEBP).', 'error');
+    input.value = '';
+    return;
+  }
+
+  // Validate file size (5MB max)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    toast('Receipt image must be smaller than 5MB.', 'error');
+    input.value = '';
+    return;
+  }
+
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const preview = document.getElementById('receiptPreview');
+    preview.src = e.target.result;
+    preview.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to Supabase Storage
+  try {
+    const timestamp = Date.now();
+    const fileName = `receipts/${timestamp}_${file.name}`;
+    
+    const { data, error } = await sb.storage
+      .from('order-receipts')
+      .upload(fileName, file, { upsert: false });
+
+    if (error) throw error;
+
+    // Get public URL
+    const { data: urlData } = sb.storage
+      .from('order-receipts')
+      .getPublicUrl(fileName);
+
+    currentReceiptUrl = urlData.publicUrl;
+    document.getElementById('o-receipt-url').value = currentReceiptUrl;
+    toast('Receipt uploaded successfully!', 'success');
+  } catch (err) {
+    console.error('Receipt upload error:', err);
+    toast(`Upload failed: ${err.message}. Please try again or contact support.`, 'error');
+    input.value = '';
+    document.getElementById('receiptPreview').classList.remove('show');
+    currentReceiptUrl = null;
+  }
+};
 
 function loadCartFromStorage() {
   try {
@@ -391,7 +449,10 @@ async function submitOrder(e) {
     preferred_time: document.getElementById('o-time').value || null,
     notes: document.getElementById('o-notes').value,
     items: orderItems,
-    status: 'pending'
+    status: 'pending',
+    payment_method: currentPaymentMethod,
+    payment_proof_url: currentReceiptUrl,
+    payment_verified: false
   };
   const btn = document.getElementById('orderSubmitBtn');
   btn.disabled = true;
@@ -419,6 +480,12 @@ async function submitOrder(e) {
     document.getElementById('typePickup').classList.add('on');
     document.getElementById('typeDelivery').classList.remove('on');
     document.getElementById('o-address').required = false;
+    document.getElementById('receiptPreview').classList.remove('show');
+    document.getElementById('receiptFile').value = '';
+    currentPaymentMethod = 'gcash';
+    currentReceiptUrl = null;
+    document.getElementById('o-receipt-url').value = '';
+    document.querySelector('input[name="paymentMethod"][value="gcash"]').checked = true;
     setTimeout(() => { btn.textContent = 'Place My Order'; btn.style.background = ''; btn.disabled = false; }, 4000);
   } else {
     console.error('Order insert error:', error.code, error.message, error.details, error.hint);
@@ -459,6 +526,9 @@ async function trackOrder(e) {
   }
   const items = Array.isArray(row.items) ? row.items : [];
   const itemsHTML = items.map(i => `<span class="dchip">${i.name} ×${i.qty}</span>`).join('');
+  const paymentMethod = { gcash: '📱 GCash', maya: '📱 Maya', card: '💳 Card', bank: '🏦 Bank' }[row.payment_method] || row.payment_method;
+  const paymentStatus = row.payment_verified ? '<span style="color:#6dbf7e;">✓ Payment Verified</span>' : '<span style="color:var(--gold);">⏳ Payment Pending</span>';
+  
   resultEl.innerHTML = `
     <div class="track-card">
       <div class="track-card-top">
@@ -467,6 +537,11 @@ async function trackOrder(e) {
       </div>
       <div class="track-card-items">${itemsHTML || '—'}</div>
       <div class="track-card-meta">${row.order_type === 'delivery' ? '🚀 Delivery' : '🏪 Pickup'} · ${[row.preferred_date, row.preferred_time].filter(Boolean).join(' ') || 'No time set'}</div>
+      <div class="track-card-payment" style="margin-top:.8rem;padding-top:.8rem;border-top:1px solid rgba(197,222,202,.1);">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:.3rem;">Payment</div>
+        <div style="font-size:.75rem;margin-bottom:.2rem;">${paymentMethod}</div>
+        <div style="font-size:.72rem;">${paymentStatus}</div>
+      </div>
     </div>`;
 }
 document.getElementById('trackForm').addEventListener('submit', trackOrder);
