@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wrap & Go — Fresh Salads & Light Bites</title>
+<meta name="description" content="Fresh salad bowls, artisan wraps, sushi and rice meals in Quezon City. Order online for pickup or delivery.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231d3b21'/%3E%3Ctext x='50' y='66' font-size='54' text-anchor='middle'%3E%F0%9F%A5%97%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@200;300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -33,6 +35,8 @@
       <li><a href="#about">Our Story</a></li>
       <li class="dot"></li>
       <li><a href="#order">Order Now</a></li>
+      <li class="dot"></li>
+      <li><a href="#track">Track Order</a></li>
     </ul>
   </nav>
 
@@ -159,6 +163,12 @@
             <input class="of-input of-full" type="email" id="o-email" placeholder="Email Address" required>
           </div>
 
+          <!-- Honeypot: hidden from real users, bots tend to fill every field -->
+          <div class="hp-field" aria-hidden="true">
+            <label for="o-hp">Leave this field empty</label>
+            <input type="text" id="o-hp" name="website" tabindex="-1" autocomplete="off">
+          </div>
+
           <div class="of-section-label" style="margin-top:1.2rem;">Delivery or Pickup?</div>
           <div class="of-type-btns">
             <button type="button" class="of-type-btn on" id="typePickup" onclick="setOrderType('pickup')">🏪 Store Pickup</button>
@@ -172,22 +182,42 @@
           <div class="of-grid" style="margin-top:1rem;">
             <div class="of-field">
               <label class="of-label">Preferred Time</label>
-              <input class="of-input" type="time" id="o-time">
+              <input class="of-input" type="time" id="o-time" required>
             </div>
             <div class="of-field">
               <label class="of-label">Date</label>
-              <input class="of-input" type="date" id="o-date">
+              <input class="of-input" type="date" id="o-date" required>
             </div>
           </div>
 
           <textarea class="of-input of-full of-textarea" id="o-notes" placeholder="Special requests, dietary notes, allergies…" style="margin-top:1rem;"></textarea>
 
+          <p class="of-pay-note">💵 Payment is made in person via cash, GCash, or card upon pickup or delivery — no online payment needed to place your order.</p>
+
           <button type="submit" class="btn-order-submit" id="orderSubmitBtn">
             Place My Order
           </button>
+
+          <p class="of-order-ref" id="orderRef" style="display:none;"></p>
         </form>
       </div>
     </div>
+  </section>
+
+  <!-- TRACK ORDER -->
+  <section id="track" class="track-sec">
+    <div class="sh rev">
+      <span class="sh-eye">Already Ordered?</span>
+      <h2 class="sh-title">Track Your <em>Order</em></h2>
+      <div class="sh-div"></div>
+      <p class="sh-sub">Enter your Order ID and the email you used to check its current status.</p>
+    </div>
+    <form class="track-form rev" id="trackForm">
+      <input class="of-input" type="text" id="t-id" placeholder="Order ID (e.g. 42)" required>
+      <input class="of-input" type="email" id="t-email" placeholder="Email used for the order" required>
+      <button type="submit" class="btn-p" id="trackBtn">Check Status</button>
+    </form>
+    <div class="track-result" id="trackResult"></div>
   </section>
 
   <!-- FOOTER -->
